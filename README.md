@@ -2,8 +2,6 @@
 
 Benchmark comparing two TurboQuant quantization variants — **TQ-MSE** and **TQ-Prod** — on vector similarity search datasets, evaluating quantization quality from 1 to 12 bits per dimension.
 
-**Reference:** Elias Frantar et al., *"TurboQuant: Quantized KV Cache and Vector Search at Scale"*, arXiv:2504.19874, 2025.
-
 ---
 
 ## Methods
