@@ -2,8 +2,6 @@
 
 Benchmark comparing two TurboQuant quantization variants — **TQ-MSE** and **TQ-Prod** — on vector similarity search datasets, evaluating quantization quality from 1 to 12 bits per dimension.
 
----
-
 ## Methods
 
 Both methods share the same preprocessing pipeline:
@@ -46,10 +44,7 @@ The QJL term provides an unbiased estimate of $\langle q, r \rangle$ using only 
 
 **Properties:**
 - Achieves $\mathbb{E}[\langle q, x \rangle_{\text{approx}}] = \langle q, x \rangle$ (unbiased IP estimation).
-- Higher reconstruction distortion than TQ-MSE at the same total bits (since only $b-1$ bits go to MSE).
-- Better Recall@1 at high bit-widths ($\geq 8$ bit/dim) due to unbiased ranking.
 - Storage: $(b-1) \cdot d$ bits (MSE indices) + $d$ bits (QJL signs) + 32 bits (residual norm) + 32 bits (norm).
-
 ---
 
 ## Evaluation Metrics
@@ -137,12 +132,4 @@ Options:
 
 ## Output
 
-Results are saved as CSV files in `result/` with columns:
-
-```
-method, dataset, dim, nb, nq, bits_per_dim,
-distortion, l2_rel_err_mean, l2_rel_err_median,
-ip_rel_err_mean, ip_rel_err_median,
-l2_recall@1, l2_recall@10, l2_recall@100,
-ip_recall@1, ip_recall@10, ip_recall@100
-```
+Results are saved as CSV files in `result/` 
