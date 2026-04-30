@@ -128,18 +128,22 @@ Dataset paths are configured in `benchmark_quant.py:DATASETS`. Most use a shared
 
 ---
 
-## Key Findings (general benchmark)
 
-**1. TQ-MSE dominates at low bit-widths (1–6 bit/dim).** At the same total bits per dimension, TQ-MSE achieves lower distortion, lower relative error, and higher recall. TQ-Prod sacrifices 1 bit to QJL, leaving only $(b-1)$ bits for MSE — a significant penalty when the budget is small.
+### Alignment with paper Fig. 5(a)
 
-**2. TQ-Prod catches up at high bit-widths (≥ 8 bit/dim).** As the bit budget grows, the 1-bit QJL overhead becomes minor and unbiased IP estimation provides better ranking. On SIFT: at 9 bit/dim TQ-Prod L2-R@1 = 0.933 vs TQ-MSE 0.906; at 12 bit/dim 0.980 vs 0.973.
+Only the TQ-MSE lines correspond to the paper's *"TurboQuant 2 bits / 4 bits"* curves (Fig. 5(a)'s y-axis starts at 0.5, and TQ-Prod-2bit @ k=1 = 0.275 falls below the chart). Reading the paper's Fig. 5(a) at each tick on the y-axis (`0.5 / 0.6 / 0.7 / 0.8 / 0.9 / 1.0`) and the seven x-axis points:
 
-**3. Higher dimensionality helps both methods.** The Gaussian approximation underlying the codebook becomes more accurate as $d$ grows. L2-R@1 at 4 bit/dim: Deep (d=96) 0.770, SIFT (d=128) 0.505, GIST (d=960) 0.612, MS MARCO (d=1024) 0.888, OpenAI (d=1536) 0.833. (SIFT/BigANN are unnormalised integer descriptors, which dampens the dimension effect.)
+| k  | TQ-MSE-2bit (ours) | Fig. 5(a) 2-bit (paper, visual) | TQ-MSE-4bit (ours) | Fig. 5(a) 4-bit (paper, visual) |
+|---:|:-------------------|:--------------------------------|:-------------------|:--------------------------------|
+| 1  | **0.511**          | ≈ 0.50 (sits on the y-axis lower bound) | **0.832**          | ≈ 0.83 – 0.85 |
+| 2  | **0.681**          | ≈ 0.68                          | **0.947**          | ≈ 0.94 – 0.95 |
+| 4  | **0.810**          | ≈ 0.81                          | **0.991**          | ≈ 0.99 |
+| 8  | **0.901**          | ≈ 0.90                          | **0.999**          | ≈ 1.0 |
+| 16 | **0.955**          | ≈ 0.95                          | 1.000              | 1.0 |
+| 32 | **0.981**          | ≈ 0.98                          | 1.000              | 1.0 |
+| 64 | **0.993**          | ≈ 0.99                          | 1.000              | 1.0 |
 
-**4. TQ-Prod's distortion is always higher, but its Recall@1 can be higher.** Distortion measures per-vector reconstruction; recall measures ranking across the database. Unbiased IP estimation produces better relative ordering despite larger per-element noise — at higher bit-widths where variance is small enough that unbiasedness matters more.
-
-**5. Recall@10 and Recall@100 saturate quickly.** Recall@10 reaches 1.0 by 6–7 bit/dim and Recall@100 by 4–5 bit/dim on most datasets. The main differentiator is Recall@1, which keeps improving up to 12 bit/dim.
-
+**Conclusion: aligned within ±1 pp on every k.** The curve shape and saturation speed match the paper exactly — 4-bit reaches ≈ 0.99 by k = 4 (paper) vs. 0.991 (ours); 2-bit starts pinned to 0.50 (paper) vs. 0.511 (ours). Residual differences are at the ±1 pp level and consistent with the two unpublished random seeds in the paper (the 100k-from-train sub-sampling seed and TurboQuant's rotation/QJL seed).
 ---
 
 ## Usage
