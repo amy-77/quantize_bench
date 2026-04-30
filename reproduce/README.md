@@ -144,7 +144,7 @@ Only the TQ-MSE lines correspond to the paper's *"TurboQuant 2 bits / 4 bits"* c
 | 64 | **0.993**          | ≈ 0.99                          | 1.000              | 1.0 |
 
 **Conclusion: aligned within ±1 pp on every k.** The curve shape and saturation speed match the paper exactly — 4-bit reaches ≈ 0.99 by k = 4 (paper) vs. 0.991 (ours); 2-bit starts pinned to 0.50 (paper) vs. 0.511 (ours). Residual differences are at the ±1 pp level and consistent with the two unpublished random seeds in the paper (the 100k-from-train sub-sampling seed and TurboQuant's rotation/QJL seed).
----
+
 
 ## Usage
 
