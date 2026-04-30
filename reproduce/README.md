@@ -115,14 +115,6 @@ done
 
 ---
 
-## Methods
-
-Both methods share the same preprocessing pipeline:
-
-1. **Normalize:** decompose each vector as $x = \|x\| \cdot \hat{x}$, storing the norm $\|x\|$ separately.
-2. **Random rotation:** apply a Haar-distributed random orthogonal matrix $\Pi$ so each coordinate of $y = \Pi \hat{x}$ becomes approximately i.i.d. $\mathcal{N}(0, 1/d)$ for large $d$.
-3. **Scalar quantization:** quantize each rotated coordinate $y_i$ independently using Lloyd-Max optimal centroids derived from the known Gaussian distribution (data-oblivious — no training data needed).
-
 
 
 ## Datasets
