@@ -123,63 +123,16 @@ Both methods share the same preprocessing pipeline:
 2. **Random rotation:** apply a Haar-distributed random orthogonal matrix $\Pi$ so each coordinate of $y = \Pi \hat{x}$ becomes approximately i.i.d. $\mathcal{N}(0, 1/d)$ for large $d$.
 3. **Scalar quantization:** quantize each rotated coordinate $y_i$ independently using Lloyd-Max optimal centroids derived from the known Gaussian distribution (data-oblivious — no training data needed).
 
-### TQ-MSE (MSE-optimal)
 
-All $b$ bits per dimension are allocated to MSE-optimal scalar quantization. Each coordinate $y_i$ is mapped to the nearest centroid $c_{k_i}$ from a $2^b$-level codebook, producing a quantized vector $\hat{y}$.
-
-Inner product estimation via full reconstruction:
-
-$$\langle q, x \rangle_{\text{approx}} = \|x\| \cdot \langle q, \Pi^T \hat{y} \rangle = \|x\| \cdot \langle \Pi q, \hat{y} \rangle$$
-
-**Properties:** Minimises reconstruction MSE $\mathbb{E}[\|x - \tilde{x}\|^2]$. The IP estimate is **biased** — it systematically under-estimates inner products. Storage: $b \cdot d$ bits (indices) + 32 bits (norm).
-
-### TQ-Prod (IP-unbiased via QJL correction)
-
-Allocates $(b-1)$ bits to MSE quantization and 1 bit to a **Quantized Johnson–Lindenstrauss (QJL)** residual correction, achieving an unbiased inner product estimator.
-
-**Encoding:**
-1. Quantise $\hat{x}$ with $(b-1)$-bit TQ-MSE, yielding $\tilde{x}_{\text{mse}}$.
-2. Compute residual $r = \hat{x} - \tilde{x}_{\text{mse}}$ and store its norm $\|r\|$.
-3. Project the residual through a random Gaussian matrix $S \in \mathbb{R}^{d \times d}$ and store only the signs: $s = \text{sign}(S \cdot r)$.
-
-Inner product estimation with two-stage correction:
-
-$$\langle q, x \rangle_{\text{approx}} = \|x\| \cdot \left( \underbrace{\langle \Pi q, \hat{y} \rangle}_{\text{MSE part}} + \underbrace{\sqrt{\frac{\pi}{2}} \cdot \frac{\|r\|}{d} \cdot \langle S q, s \rangle}_{\text{QJL residual correction}} \right)$$
-
-**Properties:** Achieves $\mathbb{E}[\langle q, x \rangle_{\text{approx}}] = \langle q, x \rangle$ (unbiased). Storage: $(b-1) \cdot d$ bits (MSE indices) + $d$ bits (QJL signs) + 32 bits (residual norm) + 32 bits (norm).
-
----
 
 ## Datasets
 
 | Dataset | Dim | Domain | Format |
 |---------|-----|--------|--------|
 | **GloVe-200** *(Fig. 5 reproduction)* | 200 | Word embeddings, ann-benchmarks | hdf5 |
-| **SIFT** | 128 | SIFT local image descriptors | fvecs |
-| **Deep** | 96 | Deep learning embeddings (Yandex Deep1B) | fvecs |
-| **BigANN** | 128 | SIFT descriptors (BigANN) | bvecs |
-| **GIST** | 960 | GIST global image descriptors | fvecs |
-| **MS MARCO** | 1024 | Passage retrieval embeddings | fvecs |
-| **OpenAI** | 1536 | OpenAI text embeddings | fvecs |
 
 Dataset paths are configured in `benchmark_quant.py:DATASETS`. Most use a shared `DATA_ROOT` of `/data/cpanourg/2-hdvc/data`; GloVe is read from `data/glove-200-angular.hdf5` relative to the repo root.
 
----
-
-## Evaluation Metrics
-
-The general benchmark script `benchmark_quant.py` computes the following on `nb × nq` distance pairs (`nb=10000`, `nq=1000` by default; the Fig. 5 reproduction script uses `nb=100000`, `nq=10000`). L2 distance estimation uses exact norms: $\hat{L}_2^2(q, x) = \|q\|^2 + \|x\|^2 - 2 \cdot \widehat{\langle q, x \rangle}$, so the only source of approximation error is the inner product estimator.
-
-| Metric | Formula | Interpretation |
-|--------|---------|----------------|
-| **Distortion** | $\frac{1}{n}\sum_i \|x_i - \tilde{x}_i\|^2$ | Mean squared reconstruction error. Lower is better. |
-| **L2-RelErr** (mean) | $\frac{1}{n \cdot m}\sum_{i,j} \frac{\lvert \hat{L}_2^2(q_j, x_i) - L_2^2(q_j, x_i) \rvert}{L_2^2(q_j, x_i)}$ | Mean relative error of squared L2 distance estimation. |
-| **IP-RelErr** (mean) | $\frac{1}{n \cdot m}\sum_{i,j} \frac{\lvert \widehat{\langle q_j, x_i \rangle} - \langle q_j, x_i \rangle \rvert}{\lvert \langle q_j, x_i \rangle \rvert}$ | Mean relative error of inner product estimation. |
-| **L2-R@K** | $P(\text{true L2-NN} \in \text{top-}K \text{ by approx L2})$ | Recall@K under L2 distance. |
-| **IP-R@K** | $P(\text{true IP-NN} \in \text{top-}K \text{ by approx IP})$ | Recall@K under inner product. |
-| **R@1@k** | $P(\text{true top-1-by-IP} \in \text{top-}k \text{ by approx IP})$ | Used by Fig. 5 reproduction. Paper's "1@k". |
-
-Median variants of RelErr are also reported in the CSV for robustness.
 
 ---
 
@@ -206,31 +159,6 @@ python benchmark_quant_reproduce.py --dataset glove --nb 100000 --nq 10000 --bit
 python plot_fig5.py
 ```
 
-`benchmark_quant_reproduce.py` options:
-- `--dataset`: defaults to `glove`
-- `--nb`, `--nq`: defaults to paper's 100,000 / 10,000
-- `--bits`: defaults to `[2, 4]` (paper's two bit-widths)
-- `--ks`: defaults to `[1, 2, 4, 8, 16, 32, 64]` (paper's top-k axis)
-- `--variant`: `mse`, `prod`, or `both` (default `both`)
-- `--seed`: TurboQuant rotation/QJL seed (default 42)
-- `--output`: custom CSV path
-
-### General benchmark (multi-bit sweep, 6 datasets)
-
-```bash
-python benchmark_quant.py --dataset sift --bits 1 2 3 4 5 6 7 8 9 10 11 12
-```
-
-Options:
-- `--dataset`: one of `sift`, `deep`, `bigann`, `gist`, `msmarco`, `openai`, `glove`
-- `--bits`: list of bit-widths (e.g., `1 2 3 4`)
-- `--nb`, `--nq`: defaults `10000` / `1000`
-- `--no-prod`: skip TQ-Prod (only run TQ-MSE)
-- `--no-rabitq`: skip RaBitQ
-- `--output`: custom CSV output path
-
-CSV columns: `method, dataset, dim, nb, nq, bits_per_dim, distortion, l2_rel_err_{mean,median}, ip_rel_err_{mean,median}, l2_recall@{1,10,100}, ip_recall@{1,10,100}`.
-
 ---
 
 ## Repository layout
@@ -248,7 +176,3 @@ CSV columns: `method, dataset, dim, nb, nq, bits_per_dim, distortion, l2_rel_err
     ├── reproduce_fig5_glove_nb100000_nq10000.csv     # R@1@k table
     └── quant_benchmark_<dataset>_nb10000_nq1000.csv  # general-benchmark sweeps
 ```
-
-## Environment
-
-Tested with Python 3.10+. Required packages: `numpy`, `scipy`, `h5py`, `matplotlib`.
