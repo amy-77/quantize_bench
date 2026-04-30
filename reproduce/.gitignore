@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+
+# Local data (large HDF5/fvecs/bvecs files — see README for download URLs)
+data/
+*.hdf5
+*.fvecs
+*.bvecs
+
+# OS / IDE
+.DS_Store
+.vscode/
+.idea/
